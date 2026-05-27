@@ -1,6 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
+import { createRequire } from 'module'
 import config from '../config.js'
+
+const require = createRequire(import.meta.url)
+const ws = require('ws')
 
 /**
  * Per-request Supabase client (anon key) — reads/writes cookies via req/res.
@@ -35,5 +39,8 @@ export function createRequestClient(req, res) {
 export const adminClient = createClient(
   config.supabase.url,
   config.supabase.serviceRoleKey,
-  { auth: { autoRefreshToken: false, persistSession: false } }
+  {
+    auth: { autoRefreshToken: false, persistSession: false },
+    realtime: { transport: ws },
+  }
 )
