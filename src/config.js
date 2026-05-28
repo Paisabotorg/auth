@@ -9,32 +9,50 @@ export default {
   port: parseInt(process.env.PORT || '3100', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
 
-  supabase: {
-    url: required('SUPABASE_URL'),
-    anonKey: required('SUPABASE_ANON_KEY'),
-    serviceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY'),
+  db: {
+    url: required('DATABASE_URL'),
   },
 
-  // Base URL of this auth service
-  baseUrl: process.env.BASE_URL || 'https://auth.paisabot.com',
+  jwt: {
+    secret: required('JWT_SECRET'),
+  },
 
-  // Where to send users after successful login
+  google: {
+    clientId: required('GOOGLE_CLIENT_ID'),
+    clientSecret: required('GOOGLE_CLIENT_SECRET'),
+    redirectUri: process.env.GOOGLE_REDIRECT_URI || 'https://auth.paisabot.com/auth/callback',
+  },
+
+  baseUrl: process.env.BASE_URL || 'https://auth.paisabot.com',
   defaultRedirect: process.env.DEFAULT_REDIRECT || 'https://paisabot.com',
 
-  // Cookie settings
   cookie: {
     domain: process.env.COOKIE_DOMAIN || '.paisabot.com',
     secure: process.env.NODE_ENV === 'production',
   },
 
-  // Allowed redirect origins after login
   allowedOrigins: [
     'https://paisabot.com',
+    'https://www.paisabot.com',
     'https://qa.paisabot.com',
+    'https://hi.paisabot.com',
+    'https://ml.paisabot.com',
+    'https://tel.paisabot.com',
     'https://analyse.paisabot.com',
     'https://markets.paisabot.com',
     'https://api.paisabot.com',
     'http://localhost:3000',
     'http://localhost:8080',
+  ],
+
+  allowedRedirects: [
+    'https://paisabot.com',
+    'https://www.paisabot.com',
+    'https://qa.paisabot.com',
+    'https://hi.paisabot.com',
+    'https://ml.paisabot.com',
+    'https://tel.paisabot.com',
+    'https://analyse.paisabot.com',
+    'https://markets.paisabot.com',
   ],
 }

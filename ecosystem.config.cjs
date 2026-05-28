@@ -5,7 +5,7 @@ module.exports = {
       script: 'src/index.js',
       instances: 1,
       exec_mode: 'fork',
-      node_args: '--require /opt/paisabot/auth/src/preload.cjs',
+      node_args: '',
       env_production: {
         NODE_ENV: 'production',
         PORT: 3100,

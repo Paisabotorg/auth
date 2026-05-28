@@ -11,37 +11,26 @@ import meRouter from './routes/me.js'
 
 const app = express()
 
-// ── Security ──────────────────────────────────────────────
 app.use(helmet())
-app.set('trust proxy', 1) // Behind nginx
+app.set('trust proxy', 1)
 
 app.use(cors({
   origin: config.allowedOrigins,
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
 }))
 
-// ── Rate limiting ─────────────────────────────────────────
-app.use('/auth', rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
-  max: 50,
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests' },
+  skip: (req) => req.path === '/health',
 }))
 
-app.use('/me', rateLimit({
-  windowMs: 60 * 1000,
-  max: 120,
-  standardHeaders: true,
-  legacyHeaders: false,
-}))
-
-// ── Body / cookies ────────────────────────────────────────
 app.use(express.json())
 app.use(cookieParser())
 
-// ── Routes ────────────────────────────────────────────────
 app.use('/auth', authRouter)
 app.use('/me', meRouter)
 
@@ -49,7 +38,6 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'paisabot-auth', ts: new Date().toISOString() })
 })
 
-// ── Error handler ─────────────────────────────────────────
 app.use((err, _req, res, _next) => {
   console.error('[error]', err.message)
   res.status(500).json({ error: 'Internal server error' })
