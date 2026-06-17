@@ -1,105 +1,121 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { signSessionToken, verifySessionToken } from '../lib/jwt.js'
 import { query } from '../lib/db.js'
+import config, { LANG_SUBDOMAIN } from '../config.js'
 
 const router = Router()
+const VALID_LANGS = new Set(Object.keys(LANG_SUBDOMAIN))
+const VALID_ROUTING = new Set(['ask', 'always', 'never'])
 
-/**
- * GET /me
- * Returns authenticated user profile + subscription + prefs.
- * Called by frontends with credentials: 'include'.
- */
-router.get('/', requireAuth, async (req, res, next) => {
+const SESSION_COOKIE_OPTS = {
+  httpOnly: true,
+  secure:   config.cookie.secure,
+  sameSite: 'lax',
+  domain:   config.cookie.domain,
+  path:     '/',
+  maxAge:   config.jwt.sessionTtlSeconds * 1000,
+}
+
+const LANG_COOKIE_OPTS = {
+  secure:   config.cookie.secure,
+  sameSite: 'lax',
+  domain:   config.cookie.domain,
+  path:     '/',
+  maxAge:   config.jwt.refreshTtlDays * 24 * 60 * 60 * 1000,
+}
+
+// ── GET /me ───────────────────────────────────────────────────────────────────
+
+router.get('/', requireAuth, (req, res) => {
+  const u = req.user
+  res.json({
+    sub:               u.id,
+    email:             u.email              || null,
+    name:              u.name               || null,
+    picture:           u.picture_url        || null,
+    lang:              u.lang               || null,
+    role:              u.role,
+    cross_lang_routing: u.cross_lang_routing || 'ask',
+  })
+})
+
+// ── PATCH /me — update lang (Phase 2 also uses this) ─────────────────────────
+
+router.patch('/', requireAuth, async (req, res, next) => {
   try {
-    const { rows } = await query(
-      `SELECT
-         u.id, u.email, u.name, u.avatar,
-         s.tier, s.status AS subscription_status, s.expires_at,
-         p.language, p.newsletter, p.stocks, p.indices, p.settings
-       FROM users u
-       LEFT JOIN subscriptions s ON s.user_id = u.id
-       LEFT JOIN user_prefs p ON p.user_id = u.id
-       WHERE u.id = $1`,
-      [req.user.id]
+    const { lang, cross_lang_routing } = req.body
+    if (lang === undefined && cross_lang_routing === undefined) return res.json({ ok: true })
+
+    if (lang !== undefined && !VALID_LANGS.has(lang))
+      return res.status(400).json({ error: 'Invalid lang' })
+    if (cross_lang_routing !== undefined && !VALID_ROUTING.has(cross_lang_routing))
+      return res.status(400).json({ error: 'Invalid cross_lang_routing' })
+
+    const userId = req.user.id
+    const sets = []
+    const vals = []
+    if (lang !== undefined)              { sets.push(`lang = $${sets.length + 1}`);               vals.push(lang) }
+    if (cross_lang_routing !== undefined){ sets.push(`cross_lang_routing = $${sets.length + 1}`); vals.push(cross_lang_routing) }
+    vals.push(userId)
+    await query(`UPDATE users SET ${sets.join(', ')} WHERE id = $${vals.length}`, vals)
+
+    const { rows: [u] } = await query(
+      'SELECT id, email, name, picture_url, lang, role, cross_lang_routing FROM users WHERE id = $1',
+      [userId]
     )
 
-    const row = rows[0]
-    res.json({
-      authenticated: true,
-      user: {
-        id: row.id,
-        email: row.email,
-        name: row.name,
-        avatar: row.avatar,
-      },
-      subscription: {
-        tier: row.tier || 'free',
-        status: row.subscription_status || 'active',
-        expiresAt: row.expires_at || null,
-      },
-      prefs: {
-        language: row.language || 'en',
-        newsletter: row.newsletter || false,
-        stocks: row.stocks || [],
-        indices: row.indices || [],
-        settings: row.settings || {},
-      },
+    const sessionToken = signSessionToken({
+      sub: u.id, email: u.email, name: u.name,
+      picture: u.picture_url, lang: u.lang, role: u.role,
+      cross_lang_routing: u.cross_lang_routing || 'ask',
     })
+
+    res.cookie('pb_session', sessionToken, SESSION_COOKIE_OPTS)
+    if (u.lang) res.cookie('pb_lang', u.lang, LANG_COOKIE_OPTS)
+
+    res.json({ ok: true, lang: u.lang, cross_lang_routing: u.cross_lang_routing })
   } catch (err) {
     next(err)
   }
 })
 
-/**
- * PATCH /me/prefs
- * Update user preferences (language, newsletter, stocks, indices, settings).
- */
-router.patch('/prefs', requireAuth, async (req, res, next) => {
+// ── DELETE /me — DPDP account + data erasure ─────────────────────────────────
+// Hard-deletes the user row; oauth_identities and sessions cascade via FK
+// (ON DELETE CASCADE). Clears all auth cookies so the device is logged out.
+// This is the user's right to erasure under India's DPDP Act 2023.
+
+router.delete('/', requireAuth, async (req, res, next) => {
   try {
-    const { language, newsletter, stocks, indices, settings } = req.body
     const userId = req.user.id
 
-    const updates = []
-    const values = [userId]
-    let i = 2
-
-    if (language !== undefined) { updates.push(`language = $${i++}`); values.push(language) }
-    if (newsletter !== undefined) {
-      updates.push(`newsletter = $${i++}`); values.push(newsletter)
-      updates.push(`newsletter_at = CASE WHEN $${i++} THEN NOW() ELSE newsletter_at END`); values.push(newsletter)
+    // Confirmation guard: require explicit body { confirm: "DELETE" } so a
+    // stray or forged DELETE can't erase an account.
+    if (req.body?.confirm !== 'DELETE') {
+      return res.status(400).json({ error: 'Send {"confirm":"DELETE"} to erase the account' })
     }
-    if (stocks !== undefined) { updates.push(`stocks = $${i++}`); values.push(stocks) }
-    if (indices !== undefined) { updates.push(`indices = $${i++}`); values.push(indices) }
-    if (settings !== undefined) { updates.push(`settings = settings || $${i++}`); values.push(JSON.stringify(settings)) }
 
-    if (!updates.length) return res.json({ ok: true })
+    const { rowCount } = await query('DELETE FROM users WHERE id = $1', [userId])
 
-    updates.push('updated_at = NOW()')
+    for (const name of ['pb_session', 'pb_refresh', 'pb_lang']) {
+      res.clearCookie(name, { domain: config.cookie.domain, path: '/' })
+    }
 
-    await query(
-      `INSERT INTO user_prefs (user_id) VALUES ($1)
-       ON CONFLICT (user_id) DO UPDATE SET ${updates.join(', ')}`,
-      values
-    )
-
-    res.json({ ok: true })
+    if (!rowCount) return res.status(404).json({ error: 'Account not found' })
+    res.json({ ok: true, deleted: true })
   } catch (err) {
     next(err)
   }
 })
 
-/**
- * GET /me/check — fast unauthenticated cookie check (no DB hit)
- */
-router.get('/check', (req, res) => {
-  const token = req.cookies?.pb_token
-  if (!token) return res.json({ authenticated: false })
+// ── GET /me/check — fast unauthenticated cookie check (no DB hit) ─────────────
 
-  import('../lib/jwt.js').then(({ verifyAccessToken }) => {
-    const payload = verifyAccessToken(token)
-    if (!payload) return res.json({ authenticated: false })
-    res.json({ authenticated: true, userId: payload.sub })
-  })
+router.get('/check', (req, res) => {
+  const token = req.cookies?.pb_session
+  if (!token) return res.json({ authenticated: false })
+  const payload = verifySessionToken(token)
+  if (!payload) return res.json({ authenticated: false })
+  res.json({ authenticated: true, sub: payload.sub, role: payload.role, lang: payload.lang })
 })
 
 export default router

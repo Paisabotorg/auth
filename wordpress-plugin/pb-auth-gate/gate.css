@@ -1,0 +1,280 @@
+/* ── Paisabot Auth Gate — gate.css ───────────────────────────────────────────
+   Design tokens mirror colors_and_type.css. These are vars so they cascade
+   naturally inside any Paisabot theme (aivartha or arthanama).
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --pb-navy:        #0F1E33;
+  --pb-navy-2:      #1B2E45;
+  --pb-amber:       #C4820A;
+  --pb-amber-3:     #9E6808;
+  --pb-up:          #1A7A4A;
+  --pb-bg:          #FFF9F4;
+  --pb-surface:     #FFFFFF;
+  --pb-surface-2:   #FFFCF9;
+  --pb-border:      #E8D8C4;
+  --pb-border-str:  #D4BFA5;
+  --pb-fg:          #0F1E33;
+  --pb-fg-3:        #4A6070;
+  --pb-fg-muted:    #7A93A3;
+  --pb-s-xl:        0 16px 48px rgba(15,30,51,.16);
+  --pb-s-sm:        0 2px 8px rgba(15,30,51,.07);
+  --pb-font:        'Inter', system-ui, -apple-system, sans-serif;
+  --pb-serif:       'Source Serif 4', 'Georgia', serif;
+  --pb-r-xl:        22px;
+  --pb-r-full:      9999px;
+}
+
+/* ── Overlay wrapper ─────────────────────────────────────────────────────── */
+
+.pb-gate-wrap {
+  display: none;
+}
+
+/* Revealed by gate.js (adds .pb-gated-visible on #pb-gate-root). The gate is
+   output in wp_footer at the end of <body>, so it must be a FIXED bottom-sheet
+   paywall — robust regardless of where the div sits in the DOM. Top portion is
+   a fade that reveals the blurred article; bottom is solid with the card. */
+#pb-gate-root.pb-gated-visible {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+/* Fade gradient bleeding the article behind the card */
+.pb-gate-fade {
+  position: absolute;
+  top: -340px;
+  left: 0;
+  right: 0;
+  height: 340px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,249,244,0) 0%,
+    rgba(255,249,244,.88) 52%,
+    var(--pb-bg) 100%
+  );
+  pointer-events: none;
+}
+
+/* Under the fixed overlay the fade fills the space above the card */
+#pb-gate-root.pb-gated-visible .pb-gate-fade {
+  position: static;
+  top: auto;
+  height: auto;
+  flex: 1 1 auto;
+  min-height: 140px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,249,244,0) 0%,
+    rgba(255,249,244,.92) 62%,
+    var(--pb-bg) 100%
+  );
+}
+
+/* ── Gate card container ─────────────────────────────────────────────────── */
+
+.pb-gate {
+  display: flex;
+  justify-content: center;
+  padding: 0 20px 64px;
+  position: relative;
+  z-index: 5;
+}
+
+#pb-gate-root.pb-gated-visible .pb-gate {
+  background: var(--pb-bg);
+  padding-bottom: 40px;
+}
+
+.pb-gate-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--pb-surface);
+  border: 1px solid var(--pb-border);
+  border-radius: var(--pb-r-xl);
+  box-shadow: var(--pb-s-xl);
+  padding: 38px 40px 34px;
+  text-align: center;
+  font-family: var(--pb-font);
+}
+
+@media (max-width: 600px) {
+  .pb-gate-card { padding: 28px 20px 26px; }
+}
+
+/* ── Gate mark (logo) ────────────────────────────────────────────────────── */
+
+.pb-gate-mark {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* ── Kicker ──────────────────────────────────────────────────────────────── */
+
+.pb-gate-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--pb-amber-3);
+}
+.pb-ln {
+  display: inline-block;
+  width: 22px;
+  height: 1.5px;
+  background: var(--pb-border-str);
+}
+
+/* ── Heading ─────────────────────────────────────────────────────────────── */
+
+.pb-gate-card h2 {
+  font-size: clamp(26px, 3.4vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -.03em;
+  color: var(--pb-navy);
+  font-weight: 900;
+  margin: 0;
+}
+.pb-gate-card h2 em {
+  font-family: var(--pb-serif);
+  font-style: italic;
+  color: var(--pb-amber-3);
+  font-weight: 700;
+}
+
+/* ── Deck ────────────────────────────────────────────────────────────────── */
+
+.pb-deck {
+  font-family: var(--pb-serif);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--pb-fg-3);
+  margin-top: 14px;
+  line-height: 1.55;
+}
+
+/* ── Action buttons ──────────────────────────────────────────────────────── */
+
+.pb-gate-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-top: 28px;
+}
+
+.pb-btn-google {
+  height: 52px;
+  border-radius: var(--pb-r-full);
+  background: var(--pb-surface);
+  border: 1.5px solid var(--pb-border-str);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--pb-navy);
+  text-decoration: none;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  font-family: var(--pb-font);
+}
+.pb-btn-google:hover {
+  background: var(--pb-surface-2);
+  border-color: #4A6F8E;
+  box-shadow: var(--pb-s-sm);
+}
+
+.pb-btn-guest {
+  height: 52px;
+  border-radius: var(--pb-r-full);
+  background: var(--pb-navy);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  text-decoration: none;
+  font-family: var(--pb-font);
+  transition: background 120ms ease, transform 120ms ease;
+}
+.pb-btn-guest:hover {
+  background: var(--pb-navy-2);
+  transform: translateY(-1px);
+}
+.pb-btn-guest svg { stroke: #fff; }
+
+/* ── Fine print ──────────────────────────────────────────────────────────── */
+
+.pb-gate-fine {
+  margin-top: 20px;
+  font-size: 11px;
+  color: var(--pb-fg-muted);
+  line-height: 1.6;
+}
+.pb-gate-fine a {
+  color: var(--pb-amber-3);
+  font-weight: 600;
+  text-decoration: none;
+}
+.pb-gate-fine a:hover { text-decoration: underline; }
+
+/* ── Perks ───────────────────────────────────────────────────────────────── */
+
+.pb-gate-perks {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--pb-border);
+}
+.pb-perk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pb-fg-3);
+}
+.pb-perk svg { color: var(--pb-up); }
+
+/* ── Spinner (shown during silent refresh check) ─────────────────────────── */
+
+.pb-gate-spinner {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(255,249,244,.6);
+  backdrop-filter: blur(2px);
+}
+
+.pb-gate-spinner::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--pb-border-str);
+  border-top-color: var(--pb-amber);
+  border-radius: 50%;
+  animation: pb-spin 0.7s linear infinite;
+}
+
+@keyframes pb-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}

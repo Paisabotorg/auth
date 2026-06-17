@@ -1,0 +1,73 @@
+/* pb-auth-gate/account.css — [pb_account] panel
+   Shares the Paisabot design tokens used by gate.css.                          */
+
+.pb-account {
+  --pb-navy: #0F1E33;
+  --pb-navy-2: #1B2E45;
+  --pb-amber: #C4820A;
+  --pb-border: #E8D8C4;
+  --pb-fg: #0F1E33;
+  --pb-fg-muted: #7A93A3;
+  --pb-bg: #FFF9F4;
+  --pb-danger: #C2362F;
+
+  max-width: 560px;
+  margin: 0 auto;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--pb-fg);
+}
+
+.pb-acc-card {
+  background: #fff;
+  border: 1px solid var(--pb-border);
+  border-radius: 18px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 20px rgba(15, 30, 51, .06);
+}
+
+.pb-acc-card h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.pb-acc-muted { color: var(--pb-fg-muted); font-size: 13px; }
+
+.pb-acc-profile { display: flex; align-items: center; gap: 14px; }
+.pb-acc-avatar  { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+.pb-acc-name    { font-size: 17px; font-weight: 800; }
+
+.pb-acc-sessions { list-style: none; margin: 0 0 14px; padding: 0; }
+.pb-acc-session {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--pb-border);
+}
+.pb-acc-session:last-child { border-bottom: none; }
+.pb-acc-sess-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pb-acc-dev  { font-size: 14px; font-weight: 700; }
+.pb-acc-meta { font-size: 12px; color: var(--pb-fg-muted); }
+.pb-acc-current { background: rgba(196, 130, 10, .05); border-radius: 10px; padding-left: 10px; padding-right: 10px; }
+.pb-acc-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 9999px;
+  background: var(--pb-amber); color: #fff; font-size: 10px; font-weight: 800;
+  vertical-align: middle;
+}
+
+.pb-acc-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 42px; padding: 0 18px; border-radius: 9999px;
+  font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none;
+  border: 1.5px solid transparent; transition: all 120ms ease;
+}
+.pb-acc-btn:disabled { opacity: .6; cursor: default; }
+.pb-acc-primary    { background: var(--pb-navy); color: #fff; }
+.pb-acc-primary:hover { background: var(--pb-navy-2); }
+.pb-acc-ghost      { background: transparent; border-color: var(--pb-border); color: var(--pb-fg); }
+.pb-acc-ghost:hover { border-color: var(--pb-navy); }
+.pb-acc-destructive { background: var(--pb-danger); color: #fff; margin-right: 8px; }
+.pb-acc-destructive:hover { filter: brightness(.93); }
+
+.pb-acc-danger { border-color: rgba(194, 54, 47, .35); }
+.pb-acc-danger h3 { color: var(--pb-danger); }

@@ -1,0 +1,145 @@
+/* pb-auth-gate/interstitial.css — Cross-language interstitial (Phase 5)
+   Uses the same design tokens as gate.css (:root vars already defined there).
+   This is a calm, non-blocking top sheet — not a full takeover.            */
+
+#pb-xl-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;   /* sheet rises from bottom on mobile */
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+#pb-xl-root.pb-xl-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Semi-transparent backdrop */
+.pb-xl-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 30, 51, .28);
+  backdrop-filter: blur(2px);
+}
+
+/* The card itself */
+.pb-xl-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 16px 24px;
+  background: var(--pb-surface, #fff);
+  border: 1px solid var(--pb-border, #E8D8C4);
+  border-radius: var(--pb-r-xl, 22px);
+  box-shadow: var(--pb-s-xl, 0 16px 48px rgba(15,30,51,.16));
+  padding: 28px 28px 22px;
+  font-family: var(--pb-font, 'Inter', system-ui, sans-serif);
+
+  /* Slide up on reveal */
+  transform: translateY(24px);
+  transition: transform 220ms ease;
+}
+
+#pb-xl-root.pb-xl-visible .pb-xl-card {
+  transform: translateY(0);
+}
+
+/* Center card on wider viewports */
+@media (min-width: 600px) {
+  #pb-xl-root {
+    align-items: center;
+  }
+  .pb-xl-card {
+    margin-bottom: 0;
+  }
+}
+
+/* Message text */
+.pb-xl-msg {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--pb-fg-3, #4A6070);
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.pb-xl-msg strong {
+  color: var(--pb-fg, #0F1E33);
+  font-weight: 700;
+}
+
+/* Action row */
+.pb-xl-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Primary: read in preferred lang */
+.pb-xl-btn-pref {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  border-radius: var(--pb-r-full, 9999px);
+  background: var(--pb-navy, #0F1E33);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  font-family: var(--pb-font, 'Inter', system-ui, sans-serif);
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.pb-xl-btn-pref:hover {
+  background: var(--pb-navy-2, #1B2E45);
+  transform: translateY(-1px);
+}
+
+/* Secondary: stay on current lang */
+.pb-xl-btn-stay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  border-radius: var(--pb-r-full, 9999px);
+  background: transparent;
+  border: 1.5px solid var(--pb-border-str, #D4BFA5);
+  color: var(--pb-fg-3, #4A6070);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--pb-font, 'Inter', system-ui, sans-serif);
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.pb-xl-btn-stay:hover {
+  border-color: var(--pb-navy, #0F1E33);
+  color: var(--pb-navy, #0F1E33);
+}
+
+/* "Remember my choice" checkbox */
+.pb-xl-remember {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--pb-fg-muted, #7A93A3);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pb-xl-remember input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--pb-amber, #C4820A);
+  cursor: pointer;
+}

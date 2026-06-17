@@ -1,0 +1,46 @@
+name: Deploy → auth.paisabot.com
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via rsync
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" \
+            ./ root@$VPS_HOST:/opt/paisabot/auth/
+          rm -f /tmp/deploy_key
+
+      - name: Install deps and restart PM2
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          echo "$SSH_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no root@$VPS_HOST \
+            "cd /opt/paisabot/auth && npm install --production && pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production"
+          rm -f /tmp/deploy_key
+
+      - name: Health check
+        run: |
+          sleep 8
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" https://auth.paisabot.com/health)
+          [ "$HTTP" = "200" ] && echo "✅ Auth service is up" || (echo "⚠️ Health check returned $HTTP" && exit 1)
