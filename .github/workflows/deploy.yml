@@ -24,6 +24,7 @@ jobs:
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='.env' \
+            --exclude='keys' \
             -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" \
             ./ root@$VPS_HOST:/opt/paisabot/auth/
           rm -f /tmp/deploy_key
@@ -36,7 +37,10 @@ jobs:
           echo "$SSH_KEY" > /tmp/deploy_key
           chmod 600 /tmp/deploy_key
           ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no root@$VPS_HOST \
-            "cd /opt/paisabot/auth && npm install --production && pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production"
+            "cd /opt/paisabot/auth && npm install --production && \
+             mkdir -p keys && \
+             (test -f keys/private.pem || node scripts/generate-keys.js) && \
+             { pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production; }"
           rm -f /tmp/deploy_key
 
       - name: Health check
