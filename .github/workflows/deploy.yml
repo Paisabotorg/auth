@@ -40,7 +40,22 @@ jobs:
           rm -f /tmp/deploy_key
 
       - name: Health check
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
-          sleep 8
-          HTTP=$(curl -s -o /dev/null -w "%{http_code}" https://auth.paisabot.com/health)
-          [ "$HTTP" = "200" ] && echo "✅ Auth service is up" || (echo "⚠️ Health check returned $HTTP" && exit 1)
+          # Retry for ~30s — npm install + PM2 start + bind can take longer than 8s.
+          for i in $(seq 1 6); do
+            sleep 5
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" https://auth.paisabot.com/health)
+            echo "attempt $i: HTTP $HTTP"
+            [ "$HTTP" = "200" ] && echo "✅ Auth service is up" && exit 0
+          done
+          # Still unhealthy → surface the real startup error from the box so we're
+          # never debugging a blind 502.
+          echo "⚠️ Auth unhealthy after retries (HTTP $HTTP) — dumping logs:"
+          echo "$SSH_KEY" > /tmp/deploy_key && chmod 600 /tmp/deploy_key
+          ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no root@$VPS_HOST \
+            "pm2 describe paisabot-auth | grep -iE 'status|restarts|uptime' || true; echo '--- pm2 logs ---'; pm2 logs paisabot-auth --lines 40 --nostream 2>/dev/null || true; echo '--- error log ---'; tail -40 /var/log/paisabot/auth-error.log 2>/dev/null || true" || true
+          rm -f /tmp/deploy_key
+          exit 1
